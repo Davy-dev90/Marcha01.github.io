@@ -1,1 +1,1290 @@
 # Marcha01.github.io
+[index.html](https://github.com/user-attachments/files/33382528/index.html)
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Marcha: organize suas rotinas, ganhe de 5 a 15 pontos por rotina, troque por recompensas e refaça o que falhou no mês.">
+<title>Marcha</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=DM+Mono:wght@400;500&family=Figtree:wght@400;500;600;700&display=swap">
+<style>:root{color-scheme:light;padding-block:env(safe-area-inset-top,0px) env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<style>
+/* Layout: cabeçalho fixo com marca, pontos e quatro abas; conteúdo em uma coluna de até 920px;
+   a matriz do mês rola na horizontal dentro do próprio painel. */
+:root{
+  --bg:#EDF0F4; --surface:#FFFFFF; --surface-2:#E3E8EF; --ink:#12202F; --ink-2:#4B5B6D; --line:#D2D9E3;
+  --accent:#2B4BD9; --accent-ink:#FFFFFF; --accent-soft:#DCE3FB;
+  --coin:#E3A400; --coin-ink:#6B4C00; --coin-soft:#FBEFC9;
+  --good:#157347; --good-soft:#D6EFE2;
+  --warn:#8F4F00; --warn-soft:#FBE6C6;
+  --bad:#A92620; --bad-soft:#F7D9D6;
+  --font-display:'Bricolage Grotesque',system-ui,sans-serif;
+  --font-body:'Figtree',system-ui,sans-serif;
+  --font-mono:'DM Mono',ui-monospace,monospace;
+  --radius:14px;
+  --shadow:0 1px 0 rgba(18,32,47,.04),0 8px 24px -16px rgba(18,32,47,.35);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E141C; --surface:#161F2B; --surface-2:#1F2B3A; --ink:#E8EEF5; --ink-2:#9DB0C4; --line:#2A3848;
+    --accent:#8AA2FF; --accent-ink:#0B1330; --accent-soft:#1E2A55;
+    --coin:#F2BE2E; --coin-ink:#F5D675; --coin-soft:#3A3010;
+    --good:#4FD08F; --good-soft:#143A29;
+    --warn:#F0AE48; --warn-soft:#3E2D10;
+    --bad:#FF8A80; --bad-soft:#47201E;
+    --shadow:none; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E141C; --surface:#161F2B; --surface-2:#1F2B3A; --ink:#E8EEF5; --ink-2:#9DB0C4; --line:#2A3848;
+  --accent:#8AA2FF; --accent-ink:#0B1330; --accent-soft:#1E2A55;
+  --coin:#F2BE2E; --coin-ink:#F5D675; --coin-soft:#3A3010;
+  --good:#4FD08F; --good-soft:#143A29;
+  --warn:#F0AE48; --warn-soft:#3E2D10;
+  --bad:#FF8A80; --bad-soft:#47201E;
+  --shadow:none; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5;padding-inline:16px}
+button,input,textarea{font-family:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:920px;margin-inline:auto;padding-block:0 72px}
+
+/* cabeçalho */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--bg);padding-top:12px;border-bottom:1px solid var(--line)}
+.top-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:800;font-size:1.55rem;letter-spacing:-.03em;line-height:1}
+.brand svg{width:28px;height:28px;flex:none}
+.score{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 14px 6px 12px;font-variant-numeric:tabular-nums}
+.coin{width:12px;height:12px;border-radius:50%;background:var(--coin);box-shadow:inset 0 0 0 2px rgba(0,0,0,.14);flex:none}
+.score .num{font:500 1.05rem var(--font-mono)}
+.score .unit{font:400 .78rem var(--font-mono);color:var(--ink-2)}
+.score .lvl{font-size:.8rem;color:var(--ink-2);border-left:1px solid var(--line);padding-left:8px}
+.tabs{display:flex;gap:2px;margin-top:8px;overflow-x:auto;scrollbar-width:none}
+.tab{appearance:none;border:0;background:none;color:var(--ink-2);font:600 .95rem var(--font-body);padding:10px 14px;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap;flex:1 0 auto;min-height:44px}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+@media (max-width:460px){.score .lvl{display:none}}
+
+/* base */
+.view{display:grid;gap:22px;padding-block:22px;min-width:0}
+.view>*{min-width:0}
+h1,h2,h3{text-wrap:balance}
+h2{margin:0;font:700 1.3rem/1.2 var(--font-display);letter-spacing:-.015em}
+.kicker{font:500 .72rem var(--font-mono);text-transform:uppercase;letter-spacing:.09em;color:var(--ink-2)}
+.sub{color:var(--ink-2);margin:6px 0 0}
+.hint{color:var(--ink-2);font-size:.85rem;margin:0}
+.mono{font-family:var(--font-mono)}
+.stack{display:grid;gap:16px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);display:grid;gap:14px;min-width:0}
+.panel-head{display:grid;gap:2px}
+.panel-head .sub{margin-top:4px}
+
+/* botões e campos */
+.btn{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 .92rem var(--font-body);padding:10px 16px;border-radius:10px;cursor:pointer;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.danger{color:var(--bad)}
+.btn.sm{min-height:36px;padding:6px 12px;font-size:.85rem}
+.btn[disabled]{opacity:.55;cursor:not-allowed}
+.field{display:grid;gap:6px;min-width:0}
+.field label,.label{font:600 .8rem var(--font-body);color:var(--ink-2)}
+input[type=text],input[type=number],input[type=time],textarea{width:100%;min-width:0;font:500 1rem var(--font-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+textarea{resize:vertical;min-height:92px;line-height:1.45}
+input::placeholder,textarea::placeholder{color:var(--ink-2);opacity:.8}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{appearance:none;min-height:40px;padding:6px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 .88rem var(--font-body);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.days{display:flex;gap:6px;flex-wrap:wrap}
+.days button{appearance:none;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 .85rem var(--font-body);cursor:pointer}
+.days button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+input[type=checkbox]{width:22px;height:22px;accent-color:var(--accent);flex:none;margin:0}
+
+/* chips */
+.chip{display:inline-flex;align-items:center;gap:4px;font:500 .72rem var(--font-mono);padding:2px 8px;border-radius:999px;background:var(--surface-2);color:var(--ink-2)}
+.chip.warn{background:var(--warn-soft);color:var(--warn)}
+.chip.bad{background:var(--bad-soft);color:var(--bad)}
+.chip.good{background:var(--good-soft);color:var(--good)}
+.pts{font:500 .85rem var(--font-mono);background:var(--coin-soft);color:var(--coin-ink);padding:3px 10px;border-radius:999px;white-space:nowrap}
+
+/* hoje */
+.hero{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 24px}
+.hero h1{margin:4px 0 0;font:700 clamp(2rem,7vw,3rem)/1 var(--font-display);letter-spacing:-.035em}
+.count{font:800 clamp(2.6rem,10vw,3.8rem)/1 var(--font-display);letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.count small{font-size:.45em;color:var(--ink-2);font-weight:600;letter-spacing:0}
+.pulse{display:flex;gap:4px;margin-top:-6px}
+.pulse i{flex:1;min-width:6px;height:10px;border-radius:5px;background:var(--surface-2)}
+.pulse i.on{background:var(--accent)}
+.group+.group{margin-top:10px}
+.group h3{margin:0 0 2px;font:500 .72rem var(--font-mono);letter-spacing:.09em;text-transform:uppercase;color:var(--ink-2)}
+.list{list-style:none;margin:0;padding:0}
+.item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:14px;padding:12px 0;border-top:1px solid var(--line)}
+.group h3+.list .item:first-child{border-top:0}
+.item-name{font-weight:600;overflow-wrap:anywhere}
+.item-meta{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;color:var(--ink-2);font-size:.82rem;margin-top:2px}
+.item.is-done .item-name{color:var(--ink-2)}
+.check{appearance:none;width:44px;height:44px;border-radius:50%;border:2px solid var(--ink-2);background:var(--surface);color:transparent;display:grid;place-items:center;cursor:pointer;padding:0;transition:transform .12s,background-color .12s}
+.check svg{width:22px;height:22px}
+.check[aria-pressed="true"]{background:var(--good);border-color:var(--good);color:#fff}
+.check:active{transform:scale(.93)}
+.banner{display:grid;gap:10px;background:var(--accent-soft);border-radius:var(--radius);padding:16px}
+.banner p{margin:0}
+.debt{background:var(--warn-soft);border-color:transparent;box-shadow:none}
+.debt-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 14px;align-items:center;padding:10px 0;border-top:1px solid color-mix(in srgb,var(--warn) 25%,transparent)}
+.debt-side{display:grid;justify-items:end;gap:4px}
+.dots{display:inline-flex;gap:4px}
+.dots i{width:11px;height:11px;border-radius:50%;border:2px solid var(--warn);display:block}
+.dots i.on{background:var(--warn)}
+.risk{font:500 .8rem var(--font-mono);color:var(--warn)}
+.empty{display:grid;gap:10px;justify-items:start}
+.empty p{margin:0;color:var(--ink-2)}
+
+/* mês */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:16px 24px}
+.stat .v{font:700 2rem/1.1 var(--font-display);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.stat .v.warn{color:var(--warn)}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.mx{border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums}
+.mx th,.mx td{width:28px;min-width:28px;height:32px;text-align:center;padding:0}
+.mx thead th{font:500 .66rem var(--font-mono);color:var(--ink-2)}
+.mx th.rn,.mx td.rn{position:sticky;left:0;z-index:1;background:var(--surface);text-align:left;width:140px;min-width:140px;max-width:140px;padding:2px 10px 2px 0;font:600 .82rem/1.2 var(--font-body);box-shadow:1px 0 0 var(--line)}
+.mx thead th.today{color:var(--accent);font-weight:500}
+.mx td.today{background:var(--accent-soft)}
+.cell{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;font:700 .72rem var(--font-mono)}
+.cell.done{background:var(--good);color:#fff}
+.cell.miss{background:var(--bad-soft);color:var(--bad);box-shadow:inset 0 0 0 1px var(--bad)}
+.cell.now{box-shadow:inset 0 0 0 2px var(--accent)}
+.cell.soon{box-shadow:inset 0 0 0 1px var(--line)}
+.cell.off::after{content:"";width:3px;height:3px;border-radius:50%;background:var(--line)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;color:var(--ink-2);font-size:.8rem}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.tips{margin:0;padding:0;list-style:none;display:grid;gap:10px}
+.tips li{padding-left:14px;position:relative}
+.tips li::before{content:"";position:absolute;left:0;top:.62em;width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.closing{display:grid;gap:2px;padding:10px 0;border-top:1px solid var(--line)}
+.closing:first-of-type{border-top:0}
+
+/* rotinas */
+.tpl-cat+.tpl-cat{margin-top:6px}
+.tpl-cat h3{margin:0 0 8px;font:500 .72rem var(--font-mono);letter-spacing:.09em;text-transform:uppercase;color:var(--ink-2)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:10px}
+.tpl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--bg)}
+.tpl .item-name{font-size:.95rem}
+.sugg{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:start;padding:12px 0;border-top:1px solid var(--line)}
+.sugg .tip{color:var(--ink-2);font-size:.85rem;margin-top:4px}
+.sugg label{display:contents}
+.mine{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.mine:first-child{border-top:0}
+details.panel summary{cursor:pointer;font:700 1.05rem var(--font-display);list-style:none;min-height:24px}
+details.panel summary::-webkit-details-marker{display:none}
+details.panel summary::after{content:"+";float:right;font:500 1.1rem var(--font-mono);color:var(--ink-2)}
+details.panel[open] summary::after{content:"\2212"}
+details.panel[open] summary{margin-bottom:12px}
+
+/* prêmios */
+.balance{display:flex;align-items:center;gap:14px;font:800 clamp(3rem,14vw,5rem)/1 var(--font-display);letter-spacing:-.045em;font-variant-numeric:tabular-nums}
+.balance .coin{width:.32em;height:.32em;min-width:18px;min-height:18px}
+.bar{height:10px;border-radius:5px;background:var(--surface-2);overflow:hidden}
+.bar>i{display:block;height:100%;border-radius:5px;background:var(--accent)}
+.bar.gold>i{background:var(--coin)}
+.totals{display:flex;flex-wrap:wrap;gap:6px 24px;color:var(--ink-2);font-size:.85rem}
+.totals b{font:500 .95rem var(--font-mono);color:var(--ink)}
+.reward{display:grid;gap:12px;align-content:start;padding:16px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);min-width:0}
+.reward .cost{font:500 .95rem var(--font-mono);display:flex;align-items:center;gap:6px}
+.ach{list-style:none;margin:0;padding:0;display:grid;gap:0}
+.ach li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.ach li:first-child{border-top:0}
+.ach .ic{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;border:2px solid var(--line);color:transparent}
+.ach .ic svg{width:16px;height:16px}
+.ach li.on .ic{background:var(--good);border-color:var(--good);color:#fff}
+.ach li:not(.on){color:var(--ink-2)}
+.ach b{display:block;color:var(--ink)}
+.ach li:not(.on) b{color:var(--ink-2)}
+dl.rules{margin:0;display:grid;gap:12px}
+dl.rules dt{font-weight:700}
+dl.rules dd{margin:2px 0 0;color:var(--ink-2)}
+.hist{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid var(--line)}
+.hist:first-child{border-top:0}
+
+.foot{color:var(--ink-2);font-size:.8rem;margin:8px 0 0}
+
+/* avisos */
+.toasts{position:fixed;left:0;right:0;bottom:0;padding:0 16px calc(16px + env(safe-area-inset-bottom,0px));display:grid;justify-items:center;gap:8px;pointer-events:none;z-index:30}
+.toast{background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;font-size:.92rem;max-width:min(440px,100%);box-shadow:0 10px 30px -12px rgba(0,0,0,.5)}
+.toast.good::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--coin);margin-right:8px}
+@media (prefers-reduced-motion:no-preference){
+  .toast{animation:rise .25s ease-out}
+  .score.bump{animation:bump .45s ease-out}
+  @keyframes rise{from{transform:translateY(10px);opacity:0}to{transform:none;opacity:1}}
+  @keyframes bump{40%{transform:scale(1.08)}}
+}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <header class="top">
+    <div class="top-row">
+      <div class="brand">
+        <svg viewBox="0 0 28 28" aria-hidden="true"><rect x="3" y="17" width="5" height="8" rx="2.5" fill="var(--accent)"/><rect x="11.5" y="10" width="5" height="15" rx="2.5" fill="var(--accent)"/><rect x="20" y="3" width="5" height="22" rx="2.5" fill="var(--accent)"/></svg>
+        <span>Marcha</span>
+      </div>
+      <div class="score" id="score"></div>
+    </div>
+    <nav class="tabs" id="tabs" aria-label="Seções">
+      <button class="tab" type="button" data-act="tab" data-v="hoje">Hoje</button>
+      <button class="tab" type="button" data-act="tab" data-v="mes">Mês</button>
+      <button class="tab" type="button" data-act="tab" data-v="rotinas">Rotinas</button>
+      <button class="tab" type="button" data-act="tab" data-v="premios">Prêmios</button>
+    </nav>
+  </header>
+  <main class="view" id="view"></main>
+  <p class="foot" id="foot"></p>
+</div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* <logic> */
+const REP = 3;          // vezes que a rotina falhada precisa ser refeita no mês (mais de duas)
+const DAY_BONUS = 10;   // bônus por concluir tudo que estava agendado no dia
+const ALL = [0,1,2,3,4,5,6], WEEK = [1,2,3,4,5];
+const LEVELS = [
+  {n:'Iniciante',at:0},{n:'Constante',at:100},{n:'Focado',at:300},
+  {n:'Disciplinado',at:700},{n:'Mestre da Marcha',at:1500}
+];
+const pad = n => String(n).padStart(2,'0');
+const key = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const parseKey = k => { const p = k.split('-').map(Number); return new Date(p[0],p[1]-1,p[2]); };
+const monthOf = k => k.slice(0,7);
+const nextMonth = ym => { let [y,m] = ym.split('-').map(Number); m++; if(m>12){m=1;y++;} return y+'-'+pad(m); };
+const monthDays = ym => { const [y,m] = ym.split('-').map(Number); const n = new Date(y,m,0).getDate(); return Array.from({length:n},(_,i)=>ym+'-'+pad(i+1)); };
+const dowOf = k => parseKey(k).getDay();
+const addDays = (k,n) => { const d = parseKey(k); d.setDate(d.getDate()+n); return key(d); };
+const uid = () => Math.random().toString(36).slice(2,9);
+const daysLeftIn = today => monthDays(monthOf(today)).length - Number(today.slice(8)) + 1;
+
+const MIN_PTS = 5, MAX_PTS = 15;   // faixa de pontos de uma rotina
+const defaultRewards = () => [
+  {id:uid(),name:'Uma hora livre, sem culpa',cost:40},
+  {id:uid(),name:'Um episódio da série',cost:60},
+  {id:uid(),name:'Sobremesa que eu gosto',cost:90},
+  {id:uid(),name:'Sair para um lugar legal',cost:300},
+  {id:uid(),name:'Um presente para mim',cost:800}
+];
+// preços da primeira versão, trocados pelos novos quando o navegador ainda guarda os antigos
+const OLD_RW = {'Uma hora livre, sem culpa':50,'Sobremesa que eu gosto':80,'Um episódio da série':120,'Sair para um lugar legal':250,'Um presente para mim':500};
+const NEW_RW = {'Uma hora livre, sem culpa':40,'Sobremesa que eu gosto':90,'Um episódio da série':60,'Sair para um lugar legal':300,'Um presente para mim':800};
+const emptyState = () => ({v:1,rwv:2,routines:[],log:{},bonus:{},penalties:[],settled:[],rewards:defaultRewards(),redeemed:[],best:0,example:false});
+
+function normalize(s){
+  const base = emptyState();
+  const out = Object.assign(base, s);
+  ['routines','penalties','settled','rewards','redeemed'].forEach(k => { if(!Array.isArray(out[k])) out[k] = emptyState()[k]; });
+  ['log','bonus'].forEach(k => { if(!out[k] || typeof out[k] !== 'object') out[k] = {}; });
+  out.routines = out.routines
+    .filter(r => r && typeof r.id === 'string' && typeof r.name === 'string' && Array.isArray(r.days) && typeof r.start === 'string')
+    .map(r => ({
+      id:r.id, name:r.name.slice(0,80),
+      period:['manha','tarde','noite'].includes(r.period) ? r.period : 'manha',
+      days:r.days.filter(n => Number.isInteger(n) && n >= 0 && n <= 6),
+      points:Number(r.points) > 0 ? Math.min(MAX_PTS,Math.max(MIN_PTS,Math.round(Number(r.points)))) : 10,
+      time:typeof r.time === 'string' ? r.time : '', start:r.start
+    }));
+  out.rewards = out.rewards.filter(w => w && typeof w.id === 'string' && typeof w.name === 'string' && Number(w.cost) > 0)
+    .map(w => ({id:w.id,name:w.name.slice(0,80),cost:Math.round(Number(w.cost))}));
+  if(s.rwv !== 2){
+    out.rewards.forEach(w => { if(OLD_RW[w.name] === w.cost) w.cost = NEW_RW[w.name]; });
+    out.rwv = 2;
+  }
+  out.best = Number(out.best) || 0;
+  out.example = !!out.example;
+  return out;
+}
+
+const isScheduled = (r,k) => k >= r.start && r.days.includes(dowOf(k));
+const isDone = (st,rid,k) => !!(st.log[k] && st.log[k][rid]);
+const scheduledOn = (st,k) => st.routines.filter(r => isScheduled(r,k));
+
+// Cada dia agendado e não concluído abre uma reposição: REP conclusões em dias posteriores do mesmo mês.
+function debtsOf(st,r,ym,today){
+  const q = [];
+  for(const d of monthDays(ym)){
+    if(d > today) break;
+    if(isDone(st,r.id,d)){
+      const o = q.find(x => x.left > 0);
+      if(o) o.left--;
+    } else if(d < today && isScheduled(r,d)){
+      q.push({miss:d,left:REP});
+    }
+  }
+  return q;
+}
+function openDebts(st,today){
+  const ym = monthOf(today), out = [];
+  for(const r of st.routines){
+    for(const d of debtsOf(st,r,ym,today)){
+      if(d.left > 0) out.push({r,miss:d.miss,left:d.left,risk:r.points*d.left});
+    }
+  }
+  return out;
+}
+const leftFor = (st,rid,today) => openDebts(st,today).filter(d => d.r.id === rid).reduce((a,d) => a + d.left,0);
+
+function totals(st){
+  let earned = 0;
+  for(const d in st.log) for(const id in st.log[d]) earned += Number(st.log[d][id].p) || 0;
+  for(const d in st.bonus) earned += Number(st.bonus[d]) || 0;
+  const lost = st.penalties.reduce((a,p) => a + (Number(p.amount) || 0),0);
+  const spent = st.redeemed.reduce((a,x) => a + (Number(x.cost) || 0),0);
+  return {earned,lost,spent,balance:earned-lost-spent,lifetime:earned-lost};
+}
+
+// Fecha os meses passados: cada reposição que ficou aberta tira os pontos da rotina (nunca abaixo de zero).
+function settle(st,today){
+  const added = [];
+  if(!st.routines.length) return added;
+  const cur = monthOf(today);
+  let ym = monthOf(st.routines.reduce((m,r) => r.start < m ? r.start : m, st.routines[0].start));
+  while(ym < cur){
+    if(!st.settled.includes(ym)){
+      const end = nextMonth(ym)+'-01';
+      for(const r of st.routines){
+        for(const d of debtsOf(st,r,ym,end)){
+          if(d.left > 0){
+            const want = r.points*d.left;
+            const amount = Math.min(want,Math.max(0,totals(st).balance));
+            const p = {id:uid(),month:ym,rid:r.id,name:r.name,left:d.left,amount,want,miss:d.miss};
+            st.penalties.push(p); added.push(p);
+          }
+        }
+      }
+      st.settled.push(ym);
+    }
+    ym = nextMonth(ym);
+  }
+  return added;
+}
+
+function refreshBonus(st,k){
+  const s = scheduledOn(st,k);
+  const all = s.length > 0 && s.every(r => isDone(st,r.id,k));
+  if(all) st.bonus[k] = DAY_BONUS; else delete st.bonus[k];
+}
+function toggleDone(st,rid,k){
+  const r = st.routines.find(x => x.id === rid);
+  if(!r) return {ok:false,reason:'missing'};
+  if(isDone(st,rid,k)){
+    const prevLog = Object.assign({},st.log[k]), prevBonus = st.bonus[k];
+    delete st.log[k][rid];
+    if(!Object.keys(st.log[k]).length) delete st.log[k];
+    refreshBonus(st,k);
+    if(totals(st).balance < 0){
+      st.log[k] = prevLog;
+      if(prevBonus === undefined) delete st.bonus[k]; else st.bonus[k] = prevBonus;
+      return {ok:false,reason:'spent'};
+    }
+    return {ok:true,done:false};
+  }
+  st.log[k] = st.log[k] || {};
+  st.log[k][rid] = {p:r.points};
+  const had = !!st.bonus[k];
+  refreshBonus(st,k);
+  return {ok:true,done:true,pts:r.points,bonus:(!had && st.bonus[k]) ? DAY_BONUS : 0};
+}
+function redeem(st,wid,today){
+  const w = st.rewards.find(x => x.id === wid);
+  if(!w || totals(st).balance < w.cost) return false;
+  st.redeemed.unshift({id:uid(),wid:w.id,name:w.name,cost:w.cost,date:today});
+  return true;
+}
+
+function streak(st,today){
+  if(!st.routines.length) return 0;
+  const earliest = st.routines.reduce((m,r) => r.start < m ? r.start : m, st.routines[0].start);
+  let n = 0, k = st.bonus[today] ? today : addDays(today,-1);
+  for(let i = 0; i < 500 && k >= earliest; i++){
+    if(st.bonus[k]) n++;
+    else if(scheduledOn(st,k).length > 0) break;
+    k = addDays(k,-1);
+  }
+  return n;
+}
+function bestStreak(st,today){
+  if(!st.routines.length) return 0;
+  let k = st.routines.reduce((m,r) => r.start < m ? r.start : m, st.routines[0].start);
+  let run = 0, best = 0;
+  for(let i = 0; i < 800 && k <= today; i++){
+    if(st.bonus[k]){ run++; if(run > best) best = run; }
+    else if(scheduledOn(st,k).length > 0 && k < today) run = 0;
+    k = addDays(k,1);
+  }
+  return best;
+}
+function levelOf(points){
+  let i = 0;
+  for(let j = 0; j < LEVELS.length; j++) if(points >= LEVELS[j].at) i = j;
+  const cur = LEVELS[i], next = LEVELS[i+1] || null;
+  const pct = next ? Math.max(0,Math.min(100,Math.round((points-cur.at)/(next.at-cur.at)*100))) : 100;
+  return {cur,next,pct,need:next ? next.at-points : 0};
+}
+function achievements(st){
+  const t = totals(st);
+  return [
+    {id:'first',n:'Primeiro passo',d:'Conclua a primeira rotina.',ok:Object.keys(st.log).length > 0},
+    {id:'s3',n:'Três em sequência',d:'3 dias seguidos com tudo concluído.',ok:st.best >= 3},
+    {id:'s7',n:'Semana perfeita',d:'7 dias seguidos com tudo concluído.',ok:st.best >= 7},
+    {id:'s30',n:'Mês inteiro',d:'30 dias seguidos com tudo concluído.',ok:st.best >= 30},
+    {id:'p100',n:'Cem pontos',d:'Some 100 pontos no total.',ok:t.lifetime >= 100},
+    {id:'p500',n:'Quinhentos pontos',d:'Some 500 pontos no total.',ok:t.lifetime >= 500},
+    {id:'rw',n:'Merecido',d:'Resgate a primeira recompensa.',ok:st.redeemed.length > 0}
+  ];
+}
+
+function seedState(today){
+  const st = emptyState();
+  st.example = true;
+  const first = monthOf(today)+'-01';
+  const defs = [
+    {name:'Beber 2 litros de água',period:'manha',days:ALL,points:5,time:'',miss:[]},
+    {name:'Treino de 40 minutos',period:'manha',days:[1,2,4,5],points:15,time:'06:30',miss:[5,8]},
+    {name:'Ler 20 minutos',period:'noite',days:ALL,points:10,time:'21:30',miss:[7]},
+    {name:'Planejar o dia seguinte',period:'noite',days:WEEK,points:10,time:'22:00',miss:[9]}
+  ];
+  const made = defs.map(d => {
+    const r = {id:uid(),name:d.name,period:d.period,days:d.days.slice(),points:d.points,time:d.time,start:first};
+    st.routines.push(r);
+    return {r,miss:d.miss};
+  });
+  for(let k = first; k < today; k = addDays(k,1)){
+    const dom = Number(k.slice(8));
+    for(const m of made){
+      if(isScheduled(m.r,k) && !m.miss.includes(dom)){
+        st.log[k] = st.log[k] || {};
+        st.log[k][m.r.id] = {p:m.r.points};
+      }
+    }
+    refreshBonus(st,k);
+  }
+  st.best = bestStreak(st,today);
+  return st;
+}
+
+function sanitizeSuggestions(data){
+  const arr = Array.isArray(data) ? data : (data && Array.isArray(data.routines) ? data.routines : []);
+  const out = [];
+  for(const x of arr){
+    if(!x || typeof x.name !== 'string' || !x.name.trim()) continue;
+    const days = Array.isArray(x.days) ? Array.from(new Set(x.days.map(Number).filter(n => Number.isInteger(n) && n >= 0 && n <= 6))).sort((a,b) => a-b) : [];
+    out.push({
+      name:x.name.trim().slice(0,60),
+      period:['manha','tarde','noite'].includes(x.period) ? x.period : 'manha',
+      days:days.length ? days : ALL.slice(),
+      points:nearestPts(x.points),
+      tip:typeof x.tip === 'string' ? x.tip.trim().slice(0,160) : '',
+      pick:true
+    });
+    if(out.length >= 8) break;
+  }
+  return out;
+}
+
+// Pontos de uma rotina: sempre 5, 10 ou 15.
+const nearestPts = v => {
+  const n = Number(v);
+  if(v === null || v === '' || !Number.isFinite(n)) return 10;
+  return [5,10,15].reduce((b,c) => Math.abs(c-n) < Math.abs(b-n) ? c : b, 10);
+};
+// Estimativa local, usada quando a IA não responde: pela duração escrita no nome.
+function guessPoints(name){
+  const s = String(name).toLowerCase();
+  let min = null, m;
+  if((m = s.match(/(\d+(?:[.,]\d+)?)\s*horas?\b/))) min = parseFloat(m[1].replace(',','.')) * 60;
+  else if((m = s.match(/(\d+)\s*min/))) min = Number(m[1]);
+  if(min === null) return 10;
+  return min <= 15 ? 5 : (min <= 45 ? 10 : 15);
+}
+// Ritmo da pessoa, usado pela IA para dar preço às recompensas.
+function paceInfo(st,today){
+  let week = 0;
+  for(let i = 0; i < 7; i++){
+    const rs = st.routines.filter(r => r.days.includes(i));
+    if(rs.length) week += rs.reduce((a,r) => a + r.points,0) + DAY_BONUS;
+  }
+  let got = 0;
+  for(let i = 1; i <= 14; i++){
+    const k = addDays(today,-i);
+    if(st.log[k]) for(const id in st.log[k]) got += Number(st.log[k][id].p) || 0;
+    got += Number(st.bonus[k]) || 0;
+  }
+  return {week,perDay:Math.round(week/7),month:Math.round(week*30/7),real:Math.round(got/14)};
+}
+const cleanCost = v => {
+  const x = Number(v);
+  if(v === null || v === '' || !Number.isFinite(x) || x <= 0) return null;
+  return Math.min(20000,Math.max(5,Math.round(x/5)*5));
+};
+const listOf = data => Array.isArray(data) ? data : (data && Array.isArray(data.rewards) ? data.rewards : []);
+// Custos devolvidos pela IA para uma lista de nomes (casa pelo nome e, se faltar, pela posição).
+function sanitizeCosts(data,names){
+  const arr = listOf(data), byName = new Map();
+  arr.forEach(x => { if(x && typeof x.name === 'string') byName.set(x.name.trim().toLowerCase(),x); });
+  const out = [];
+  for(let i = 0; i < names.length; i++){
+    const x = byName.get(String(names[i]).trim().toLowerCase()) || arr[i];
+    const c = cleanCost(x && typeof x === 'object' ? x.cost : x);
+    if(c === null) return null;
+    out.push(c);
+  }
+  return out;
+}
+function sanitizeRewards(data){
+  const out = [];
+  for(const x of listOf(data)){
+    if(!x || typeof x.name !== 'string' || !x.name.trim()) continue;
+    const c = cleanCost(x.cost);
+    if(c === null) continue;
+    out.push({name:x.name.trim().slice(0,60),cost:c,pick:true});
+    if(out.length >= 6) break;
+  }
+  return out;
+}
+/* </logic> */
+
+// ---------- estado e armazenamento ----------
+const KEY = 'marcha:v1', OLD_KEY = 'ritmo:v1';
+let storageOk = true;
+const TODAY = () => key(new Date());
+function load(){
+  try{
+    const raw = localStorage.getItem(KEY) || localStorage.getItem(OLD_KEY);
+    if(raw){
+      const s = JSON.parse(raw);
+      if(s && s.v === 1 && Array.isArray(s.routines)) return normalize(s);
+    }
+  }catch(e){ storageOk = false; }
+  return null;
+}
+function save(){
+  try{ localStorage.setItem(KEY,JSON.stringify(st)); storageOk = true; }
+  catch(e){ storageOk = false; }
+}
+let st = load() || seedState(TODAY());
+
+// ---------- textos ----------
+const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const DOWFULL = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+const DOWLET = ['D','S','T','Q','Q','S','S'];
+const DOWABR = ['dom','seg','ter','qua','qui','sex','sáb'];
+const PERIODS = [{id:'manha',label:'Manhã'},{id:'tarde',label:'Tarde'},{id:'noite',label:'Noite'}];
+const PL = {manha:'Manhã',tarde:'Tarde',noite:'Noite'};
+const TEMPLATES = [
+  {cat:'Saúde',name:'Beber 2 litros de água',period:'manha',days:ALL,points:5},
+  {cat:'Saúde',name:'Caminhada de 30 minutos',period:'manha',days:[1,3,5],points:10},
+  {cat:'Saúde',name:'Treino de 40 minutos',period:'manha',days:[1,2,4,5],points:15},
+  {cat:'Saúde',name:'Dormir antes das 23h',period:'noite',days:ALL,points:10},
+  {cat:'Estudo',name:'Estudar inglês por 30 minutos',period:'tarde',days:WEEK,points:10},
+  {cat:'Estudo',name:'Ler 20 minutos',period:'noite',days:ALL,points:10},
+  {cat:'Estudo',name:'Revisar as anotações da semana',period:'noite',days:[0],points:10},
+  {cat:'Casa',name:'Arrumar a cama',period:'manha',days:ALL,points:5},
+  {cat:'Casa',name:'Lavar a louça do jantar',period:'noite',days:ALL,points:5},
+  {cat:'Casa',name:'Faxina rápida de 15 minutos',period:'tarde',days:[6],points:10},
+  {cat:'Foco',name:'Planejar o dia',period:'manha',days:WEEK,points:10},
+  {cat:'Foco',name:'2 horas de foco sem celular',period:'tarde',days:WEEK,points:15},
+  {cat:'Foco',name:'Organizar as finanças',period:'noite',days:[0],points:15},
+  {cat:'Foco',name:'Revisar o dia e planejar o seguinte',period:'noite',days:WEEK,points:10}
+];
+const esc = s => String(s).replace(/[&<>"']/g,c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => Number(n).toLocaleString('pt-BR');
+const plural = (n,a,b) => n === 1 ? a : b;
+const ddmm = k => k.slice(8)+'/'+k.slice(5,7);
+function daysText(days){
+  const d = days.slice().sort((a,b) => a-b).join();
+  if(d === ALL.join()) return 'todos os dias';
+  if(d === WEEK.join()) return 'dias úteis';
+  if(d === '0,6') return 'fim de semana';
+  return days.slice().sort((a,b) => a-b).map(i => DOWABR[i]).join(' ');
+}
+function sortR(list){
+  const po = {manha:0,tarde:1,noite:2};
+  return list.slice().sort((a,b) => po[a.period]-po[b.period] || (a.time||'99:99').localeCompare(b.time||'99:99') || a.name.localeCompare(b.name,'pt-BR'));
+}
+
+// ---------- interface ----------
+const $view = document.getElementById('view');
+const $score = document.getElementById('score');
+const $tabs = document.getElementById('tabs');
+const $foot = document.getElementById('foot');
+const $toasts = document.getElementById('toasts');
+const newForm = () => ({id:null,name:'',period:'manha',days:WEEK.slice(),points:0,time:'',busy:false}); // points 0 = a IA decide
+const ui = {
+  tab:'hoje', armed:null, armT:null, sample:null, sampleState:'checking',
+  ai:{text:'',status:'idle',items:[],msg:'',ctl:null},
+  tips:{status:'idle',lines:[],msg:'',ctl:null},
+  form:newForm(), reward:{name:'',cost:''}, rw:{status:'idle',sugg:[],msg:'',ctl:null,busy:false}, backup:'', restore:''
+};
+
+function toast(msg,kind){
+  const el = document.createElement('div');
+  el.className = 'toast'+(kind ? ' '+kind : '');
+  el.textContent = msg;
+  $toasts.appendChild(el);
+  setTimeout(() => el.remove(), msg.length > 70 ? 5200 : 3400);
+}
+function bump(){
+  $score.classList.remove('bump'); void $score.offsetWidth; $score.classList.add('bump');
+}
+function commit(){ save(); render(); }
+
+const checkSVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const plusSVG = '<svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M10 4v12M4 10h12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+const armBtn = (act,id,label,armedLabel,cls) => {
+  const tok = act+':'+id, on = ui.armed === tok;
+  return '<button type="button" class="'+(cls||'btn sm danger')+'" data-act="'+act+'" data-id="'+id+'" data-fk="'+tok+'">'+(on ? armedLabel : label)+'</button>';
+};
+
+function renderTop(){
+  const t = totals(st), lv = levelOf(t.lifetime);
+  $score.innerHTML = '<span class="coin"></span><span class="num">'+fmt(t.balance)+'</span><span class="unit">pts</span><span class="lvl">'+esc(lv.cur.n)+'</span>';
+  $score.setAttribute('aria-label',fmt(t.balance)+' pontos, nível '+lv.cur.n);
+  $foot.textContent = 'Seus pontos e rotinas ficam salvos neste navegador.'+(storageOk ? '' : ' O armazenamento está bloqueado, então nada será guardado ao fechar a página.');
+}
+
+function render(){
+  const a = document.activeElement;
+  let fk = null, ss = null, se = null;
+  if(a && $view.contains(a)){
+    fk = a.id || a.getAttribute('data-fk');
+    try{ ss = a.selectionStart; se = a.selectionEnd; }catch(_){}
+  }
+  renderTop();
+  $tabs.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected',String(b.dataset.v === ui.tab)));
+  const views = {hoje:viewHoje,mes:viewMes,rotinas:viewRotinas,premios:viewPremios};
+  $view.innerHTML = views[ui.tab]();
+  if(fk){
+    const el = document.getElementById(fk) || $view.querySelector('[data-fk="'+fk+'"]');
+    if(el){
+      el.focus({preventScroll:true});
+      if(ss != null && el.setSelectionRange){ try{ el.setSelectionRange(ss,se); }catch(_){} }
+    }
+  }
+}
+
+// ----- Hoje -----
+function debtPanel(debts,today){
+  const last = monthDays(monthOf(today)).slice(-1)[0];
+  const left = daysLeftIn(today);
+  const risk = debts.reduce((a,d) => a + d.risk,0);
+  const byR = {}; debts.forEach(d => { byR[d.r.id] = (byR[d.r.id]||0) + d.left; });
+  const rows = debts.map(d => {
+    const paid = REP-d.left;
+    const late = byR[d.r.id] > left;
+    let dots = ''; for(let i = 0; i < REP; i++) dots += '<i class="'+(i < paid ? 'on' : '')+'"></i>';
+    return '<li class="debt-row"><div><div class="item-name">'+esc(d.r.name)+'</div><div class="item-meta"><span>falhou em '+ddmm(d.miss)+'</span>'+(late ? '<span class="chip bad">prazo curto</span>' : '')+'</div></div>'
+      + '<div class="debt-side"><span class="dots" role="img" aria-label="'+paid+' de '+REP+' feitas">'+dots+'</span><span class="risk">−'+d.risk+' pts</span></div></li>';
+  }).join('');
+  return '<section class="panel debt" aria-labelledby="debt-h"><div class="panel-head"><h2 id="debt-h">Reposições abertas</h2>'
+    + '<p class="sub">Refaça cada rotina '+REP+' vezes até '+ddmm(last)+' ('+left+' '+plural(left,'dia','dias')+', contando hoje). O que faltar tira pontos no fechamento do mês. Em risco agora: <b>'+risk+' pts</b>.</p></div>'
+    + '<ul class="list">'+rows+'</ul></section>';
+}
+function itemHTML(r,today,byR,extra){
+  const done = isDone(st,r.id,today);
+  const left = (byR[r.id]||[]).reduce((a,d) => a + d.left,0);
+  const meta = [];
+  if(r.time) meta.push('<span class="mono">'+esc(r.time)+'</span>');
+  if(extra) meta.push('<span class="chip warn">reposição extra · faltam '+left+'</span>');
+  else if(left > 0) meta.push('<span class="chip warn">reposição · faltam '+left+'</span>');
+  const p = done ? (Number(st.log[today][r.id].p)||r.points) : r.points;
+  return '<li class="item'+(done ? ' is-done' : '')+'"><button type="button" class="check" data-act="toggle" data-id="'+r.id+'" data-fk="t:'+r.id+'" aria-pressed="'+done+'" aria-label="'+(done ? 'Desmarcar' : 'Concluir')+' '+esc(r.name)+'">'+checkSVG+'</button>'
+    + '<div><div class="item-name">'+esc(r.name)+'</div>'+(meta.length ? '<div class="item-meta">'+meta.join('')+'</div>' : '')+'</div>'
+    + '<span class="pts">+'+p+'</span></li>';
+}
+function viewHoje(){
+  const today = TODAY(), now = new Date();
+  const sched = st.routines.filter(r => isScheduled(r,today));
+  const doneN = sched.filter(r => isDone(st,r.id,today)).length;
+  const debts = openDebts(st,today);
+  const byR = {}; debts.forEach(d => { (byR[d.r.id] = byR[d.r.id]||[]).push(d); });
+  const extra = sortR(st.routines.filter(r => !isScheduled(r,today) && byR[r.id]));
+  const sk = streak(st,today);
+  let sub;
+  if(!sched.length) sub = 'Nenhuma rotina agendada para hoje.';
+  else if(doneN === sched.length) sub = 'Dia completo. O bônus de +'+DAY_BONUS+' já está na sua conta.';
+  else sub = 'Faltam '+(sched.length-doneN)+' '+plural(sched.length-doneN,'rotina','rotinas')+' para fechar o dia. Completar tudo rende +'+DAY_BONUS+' pontos.';
+  if(sk > 0) sub += ' Sequência atual: '+sk+' '+plural(sk,'dia','dias')+'.';
+  let html = '<section class="hero"><div><div class="kicker">'+DOWFULL[now.getDay()]+'</div><h1>'+now.getDate()+' de '+MESES[now.getMonth()]+'</h1><p class="sub">'+esc(sub)+'</p></div>'
+    + (sched.length ? '<div class="count" role="img" aria-label="'+doneN+' de '+sched.length+' rotinas feitas">'+doneN+'<small>/'+sched.length+'</small></div>' : '')
+    + '</section>';
+  if(sched.length){
+    html += '<div class="pulse" aria-hidden="true">'+sched.map((r,i) => '<i class="'+(i < doneN ? 'on' : '')+'"></i>').join('')+'</div>';
+  }
+  if(st.example){
+    html += '<section class="banner"><div><b>Dados de exemplo.</b></div><p>Criamos 4 rotinas e um histórico deste mês para você ver como os pontos e as reposições funcionam. Quando quiser, apague tudo e comece com as suas.</p>'
+      + '<div class="row">'+armBtn('wipe','all','Começar do zero','Confirmar: apagar tudo','btn primary')+'<button type="button" class="btn" data-act="keep">Manter e esconder aviso</button></div></section>';
+  }
+  if(debts.length) html += debtPanel(debts,today);
+  if(!st.routines.length){
+    html += '<section class="panel empty"><h2>Comece pela primeira rotina</h2><p>Descreva o que você quer organizar e a IA monta a lista, ou escolha um modelo pronto com um toque.</p>'
+      + '<div class="row"><button type="button" class="btn primary" data-act="go-new">'+plusSVG+' Criar rotinas</button></div></section>';
+    return html;
+  }
+  if(!sched.length && !extra.length){
+    html += '<section class="panel empty"><h2>Dia livre</h2><p>Você não tem rotinas agendadas para hoje.</p><div class="row"><button type="button" class="btn" data-act="go-new">'+plusSVG+' Nova rotina</button></div></section>';
+    return html;
+  }
+  let groups = '';
+  PERIODS.forEach(p => {
+    const rs = sortR(sched.filter(r => r.period === p.id));
+    if(rs.length) groups += '<div class="group"><h3>'+p.label+'</h3><ul class="list">'+rs.map(r => itemHTML(r,today,byR,false)).join('')+'</ul></div>';
+  });
+  if(extra.length) groups += '<div class="group"><h3>Reposição extra de hoje</h3><ul class="list">'+extra.map(r => itemHTML(r,today,byR,true)).join('')+'</ul></div>';
+  html += '<section class="panel" aria-label="Rotinas de hoje">'+groups+'</section>';
+  html += '<div class="row"><button type="button" class="btn" data-act="go-new">'+plusSVG+' Nova rotina</button></div>';
+  return html;
+}
+
+// ----- Mês -----
+function cellState(r,d,today){
+  if(isDone(st,r.id,d)) return 'done';
+  if(!isScheduled(r,d)) return 'off';
+  if(d < today) return 'miss';
+  if(d === today) return 'now';
+  return 'soon';
+}
+function viewMes(){
+  const today = TODAY(), ym = monthOf(today), days = monthDays(ym);
+  const rs = sortR(st.routines);
+  let pts = 0;
+  days.forEach(d => { if(st.log[d]) for(const id in st.log[d]) pts += Number(st.log[d][id].p)||0; pts += Number(st.bonus[d])||0; });
+  let sched = 0, ok = 0;
+  rs.forEach(r => days.forEach(d => {
+    if(d > today || !isScheduled(r,d)) return;
+    const done = isDone(st,r.id,d);
+    if(d < today || done) sched++;
+    if(done) ok++;
+  }));
+  const debts = openDebts(st,today);
+  const risk = debts.reduce((a,d) => a + d.risk,0);
+  const [y,m] = ym.split('-').map(Number);
+  const names = {done:'feita',miss:'falhou',now:'hoje',soon:'agendada',off:'sem agenda'};
+  const glyph = {done:'✓',miss:'×',now:'',soon:'',off:''};
+  let html = '<section><div class="kicker">Visão do mês</div><h2 style="font-size:1.8rem">'+MESES[m-1]+' de '+y+'</h2></section>'
+    + '<section class="stats" aria-label="Resumo do mês">'
+    + '<div class="stat"><div class="kicker">Pontos no mês</div><div class="v">'+fmt(pts)+'</div></div>'
+    + '<div class="stat"><div class="kicker">Conclusão</div><div class="v">'+(sched ? Math.round(ok/sched*100)+'%' : '–')+'</div></div>'
+    + '<div class="stat"><div class="kicker">Em risco</div><div class="v'+(risk ? ' warn' : '')+'">'+(risk ? '−'+risk : '0')+'</div></div>'
+    + '<div class="stat"><div class="kicker">Dias restantes</div><div class="v">'+daysLeftIn(today)+'</div></div></section>';
+  if(rs.length){
+    const head = days.map(d => '<th scope="col" class="'+(d === today ? 'today' : '')+'">'+Number(d.slice(8))+'</th>').join('');
+    const body = rs.map(r => '<tr><th scope="row" class="rn">'+esc(r.name)+'</th>'+days.map(d => {
+      const s = cellState(r,d,today);
+      return '<td class="'+(d === today ? 'today' : '')+'"><span class="cell '+s+'" role="img" aria-label="'+names[s]+', dia '+Number(d.slice(8))+'">'+glyph[s]+'</span></td>';
+    }).join('')+'</tr>').join('');
+    html += '<section class="panel"><div class="scroll"><table class="mx"><thead><tr><th scope="col" class="rn">Rotina</th>'+head+'</tr></thead><tbody>'+body+'</tbody></table></div>'
+      + '<div class="legend"><span><i class="cell done">✓</i> feita</span><span><i class="cell miss">×</i> falhou</span><span><i class="cell now"></i> hoje</span><span><i class="cell soon"></i> agendada</span></div></section>';
+  } else {
+    html += '<section class="panel empty"><h2>Nada para mostrar ainda</h2><p>Crie rotinas para acompanhar o mês dia a dia.</p><div class="row"><button type="button" class="btn primary" data-act="go-new">'+plusSVG+' Criar rotinas</button></div></section>';
+  }
+  if(debts.length) html += debtPanel(debts,today);
+  if(st.routines.length){
+    let tips = '';
+    if(ui.sampleState === 'off') tips = '<p class="hint">O assistente de IA não está disponível nesta visualização.</p>';
+    else if(ui.tips.status === 'loading') tips = '<div class="row"><span class="hint">Pensando…</span><button type="button" class="btn sm" data-act="tips-stop">Parar</button></div>';
+    else {
+      if(ui.tips.lines.length) tips += '<ul class="tips">'+ui.tips.lines.map(l => '<li>'+esc(l)+'</li>').join('')+'</ul>';
+      if(ui.tips.msg) tips += '<p class="hint">'+esc(ui.tips.msg)+'</p>';
+      tips += '<div class="row"><button type="button" class="btn" data-act="tips-run"'+(ui.sampleState !== 'ready' ? ' disabled' : '')+'>'+(ui.tips.lines.length ? 'Pedir novas dicas' : 'Pedir dicas para este mês')+'</button></div>';
+    }
+    html += '<section class="panel"><div class="panel-head"><h2>Dicas do assistente</h2><p class="sub">A IA lê o seu mês e sugere como cumprir as reposições e manter o ritmo.</p></div>'+tips+'</section>';
+  }
+  const byM = {};
+  st.penalties.forEach(p => { (byM[p.month] = byM[p.month]||[]).push(p); });
+  const ms = Object.keys(byM).sort().reverse();
+  if(ms.length){
+    html += '<section class="panel"><div class="panel-head"><h2>Fechamentos anteriores</h2><p class="sub">Reposições que ficaram abertas no fim do mês.</p></div>'
+      + ms.map(k => {
+        const [yy,mm] = k.split('-').map(Number);
+        const tot = byM[k].reduce((a,p) => a + p.amount,0);
+        return '<div class="closing"><div><b>'+MESES[mm-1]+' de '+yy+'</b> <span class="chip bad">−'+fmt(tot)+' pts</span></div><div class="hint">'
+          + byM[k].map(p => esc(p.name)+' (faltaram '+p.left+')').join(', ')+'</div></div>';
+      }).join('')+'</section>';
+  }
+  return html;
+}
+
+// ----- Rotinas -----
+function formHTML(){
+  const f = ui.form;
+  return '<form id="routine-form" class="stack" novalidate>'
+    + '<div class="field"><label for="f-name">Nome da rotina</label><input id="f-name" type="text" maxlength="60" value="'+esc(f.name)+'" placeholder="Ex.: Caminhar 30 minutos" autocomplete="off"></div>'
+    + '<div class="field"><span class="label">Período do dia</span><div class="seg">'+PERIODS.map(p => '<button type="button" data-act="f-period" data-v="'+p.id+'" data-fk="fp-'+p.id+'" aria-pressed="'+(f.period === p.id)+'">'+p.label+'</button>').join('')+'</div></div>'
+    + '<div class="field"><span class="label">Dias da semana</span><div class="days">'+ALL.map(i => '<button type="button" data-act="f-day" data-v="'+i+'" data-fk="fd-'+i+'" aria-pressed="'+f.days.includes(i)+'" aria-label="'+DOWFULL[i]+'">'+DOWLET[i]+'</button>').join('')+'</div>'
+    + '<div class="seg"><button type="button" data-act="f-preset" data-v="all" data-fk="fx-all" aria-pressed="'+(f.days.slice().sort().join() === ALL.join())+'">Todos os dias</button><button type="button" data-act="f-preset" data-v="week" data-fk="fx-week" aria-pressed="'+(f.days.slice().sort().join() === WEEK.join())+'">Dias úteis</button></div></div>'
+    + '<div class="field"><span class="label">Pontos por conclusão</span><div class="seg">'+[0,5,10,15].map(n => '<button type="button" data-act="f-points" data-v="'+n+'" data-fk="fq-'+n+'" aria-pressed="'+(f.points === n)+'">'+(n === 0 ? (ui.sampleState === 'off' ? 'Automático' : 'IA decide') : n)+'</button>').join('')+'</div><p class="hint">'+(ui.sampleState === 'off' ? 'Automático estima pela duração escrita no nome, como "30 minutos". ' : 'Em "IA decide", o assistente avalia o nome, a dificuldade e o tempo. ')+'Vale de 5 (rápido ou fácil) a 15 (longo ou difícil).</p></div>'
+    + '<div class="field"><label for="f-time">Horário (opcional)</label><input id="f-time" type="time" value="'+esc(f.time)+'"></div>'
+    + '<div class="row"><button class="btn primary" type="submit"'+(f.busy ? ' disabled' : '')+'>'+(f.busy ? 'Avaliando…' : (f.id ? 'Salvar alterações' : 'Adicionar rotina'))+'</button>'+(f.id ? '<button type="button" class="btn" data-act="f-cancel">Cancelar</button>' : '')+'</div></form>';
+}
+function aiPanel(){
+  const a = ui.ai;
+  let body;
+  if(ui.sampleState === 'off'){
+    body = '<p class="hint">O assistente de IA não está disponível nesta visualização. Os modelos prontos abaixo funcionam do mesmo jeito: um toque e a rotina entra no seu dia.</p>';
+  } else {
+    const busy = a.status === 'loading';
+    body = '<form id="ai-form" class="stack" novalidate><div class="field"><label for="ai-text">O que você quer organizar?</label>'
+      + '<textarea id="ai-text" placeholder="Ex.: quero acordar mais cedo, estudar inglês depois do trabalho e voltar a treinar 3 vezes por semana">'+esc(a.text)+'</textarea></div>'
+      + '<div class="row">'+(busy
+        ? '<button type="button" class="btn primary" disabled>Pensando…</button><button type="button" class="btn" data-act="ai-stop">Parar</button>'
+        : '<button type="submit" class="btn primary"'+(ui.sampleState !== 'ready' ? ' disabled' : '')+'>'+(ui.sampleState === 'checking' ? 'Conectando…' : 'Montar rotinas com IA')+'</button>')+'</div></form>';
+    if(a.msg) body += '<p class="hint" role="status">'+esc(a.msg)+'</p>';
+    if(a.items.length){
+      const n = a.items.filter(i => i.pick).length;
+      body += '<div><h3 class="kicker" style="margin:0">Sugestões</h3>'+a.items.map((it,i) =>
+        '<div class="sugg"><input type="checkbox" id="sg-'+i+'" data-act="ai-pick" data-i="'+i+'"'+(it.pick ? ' checked' : '')+' aria-label="Adicionar '+esc(it.name)+'">'
+        + '<label for="sg-'+i+'"><span><span class="item-name">'+esc(it.name)+'</span><span class="item-meta"><span>'+PL[it.period]+'</span><span>'+daysText(it.days)+'</span></span>'+(it.tip ? '<span class="tip" style="display:block">'+esc(it.tip)+'</span>' : '')+'</span></label>'
+        + '<span class="pts">+'+it.points+'</span></div>').join('')
+        + '</div><div class="row"><button type="button" class="btn primary" data-act="ai-add"'+(n ? '' : ' disabled')+'>Adicionar '+n+' '+plural(n,'selecionada','selecionadas')+'</button><button type="button" class="btn" data-act="ai-clear">Descartar</button></div>';
+    }
+  }
+  return '<section class="panel" aria-labelledby="ai-h"><div class="panel-head"><h2 id="ai-h">Conte o que você quer mudar</h2><p class="sub">Escreva do seu jeito. A IA monta rotinas pequenas, com dias, período e pontos. Você escolhe quais entram.</p></div>'+body+'</section>';
+}
+function viewRotinas(){
+  const have = new Set(st.routines.map(r => r.name.trim().toLowerCase()));
+  const cats = [...new Set(TEMPLATES.map(t => t.cat))];
+  const tpl = cats.map(c => '<div class="tpl-cat"><h3>'+c+'</h3><div class="grid2">'+TEMPLATES.map((t,i) => ({t,i})).filter(x => x.t.cat === c).map(x => {
+    const has = have.has(x.t.name.toLowerCase());
+    return '<div class="tpl"><div><div class="item-name">'+esc(x.t.name)+'</div><div class="item-meta"><span>'+PL[x.t.period]+'</span><span>'+daysText(x.t.days)+'</span><span class="pts">+'+x.t.points+'</span></div></div>'
+      + '<button type="button" class="btn sm'+(has ? '' : ' primary')+'" data-act="tpl-add" data-i="'+x.i+'"'+(has ? ' disabled' : '')+'>'+(has ? 'Adicionada' : 'Adicionar')+'</button></div>';
+  }).join('')+'</div></div>').join('');
+  const mine = sortR(st.routines).map(r => '<div class="mine"><div><div class="item-name">'+esc(r.name)+'</div><div class="item-meta"><span>'+PL[r.period]+(r.time ? ' · '+esc(r.time) : '')+'</span><span>'+daysText(r.days)+'</span><span class="pts">+'+r.points+'</span></div></div>'
+    + '<div class="row"><button type="button" class="btn sm" data-act="edit" data-id="'+r.id+'" data-fk="e:'+r.id+'">Editar</button>'+armBtn('del',r.id,'Apagar','Confirmar')+'</div></div>').join('');
+  return aiPanel()
+    + '<section class="panel"><div class="panel-head"><h2>Modelos prontos</h2><p class="sub">Um toque e a rotina entra no seu dia.</p></div>'+tpl+'</section>'
+    + '<section class="panel" id="form-panel" aria-labelledby="form-h"><div class="panel-head"><h2 id="form-h">'+(ui.form.id ? 'Editar rotina' : 'Criar do zero')+'</h2></div>'+formHTML()+'</section>'
+    + '<section class="panel"><div class="panel-head"><h2>Suas rotinas ('+st.routines.length+')</h2>'+(st.routines.length ? '<p class="sub">Apagar uma rotina cancela as reposições abertas dela. Mudar os dias começa a contar a partir de hoje.</p>' : '')+'</div>'
+    + (st.routines.length ? '<div>'+mine+'</div>' : '<p class="hint">Nenhuma rotina ainda.</p>')+'</section>'
+    + '<details class="panel"><summary>Backup e recomeço</summary><div class="stack">'
+    + '<p class="hint">Seus dados ficam só neste navegador. Copie o backup para guardar ou cole um backup para restaurar.</p>'
+    + '<div class="row"><button type="button" class="btn" data-act="backup-copy">Copiar backup</button></div>'
+    + (ui.backup ? '<div class="field"><label for="backup-text">Backup</label><textarea id="backup-text" readonly>'+esc(ui.backup)+'</textarea></div>' : '')
+    + '<div class="field"><label for="restore-text">Restaurar de um backup</label><textarea id="restore-text" placeholder="Cole aqui o texto do backup">'+esc(ui.restore)+'</textarea></div>'
+    + '<div class="row"><button type="button" class="btn" data-act="backup-restore">Restaurar</button>'+armBtn('wipe','rot','Apagar tudo e recomeçar','Confirmar: apagar tudo')+'</div></div></details>';
+}
+
+// ----- Prêmios -----
+function rwTools(){
+  if(ui.sampleState === 'off') return '';
+  if(ui.rw.status === 'loading') return '<div class="row" style="margin-bottom:12px"><span class="hint">Pensando…</span><button type="button" class="btn sm" data-act="rw-stop">Parar</button></div>';
+  return '<div class="row" style="margin-bottom:12px"><button type="button" class="btn sm" data-act="rw-suggest"'+(ui.sampleState !== 'ready' ? ' disabled' : '')+'>Sugerir recompensas com IA</button>'
+    + (st.rewards.length ? armBtn('rw-reprice','all','Ajustar preços com IA','Confirmar: trocar os preços','btn sm') : '')+'</div>'
+    + (ui.rw.msg ? '<p class="hint" role="status" style="margin:0 0 12px">'+esc(ui.rw.msg)+'</p>' : '');
+}
+function rwSuggHTML(){
+  const a = ui.rw.sugg;
+  if(!a.length) return '';
+  const n = a.filter(i => i.pick).length;
+  return '<div class="panel" style="margin-bottom:12px"><div class="panel-head"><h2>Sugestões da IA</h2><p class="sub">Preços calculados para o seu ritmo de pontos.</p></div><div>'
+    + a.map((it,i) => '<div class="sugg"><input type="checkbox" id="rs-'+i+'" data-act="rw-pick" data-i="'+i+'"'+(it.pick ? ' checked' : '')+' aria-label="Adicionar '+esc(it.name)+'"><label for="rs-'+i+'"><span class="item-name">'+esc(it.name)+'</span></label><span class="pts">'+fmt(it.cost)+' pts</span></div>').join('')
+    + '</div><div class="row"><button type="button" class="btn primary" data-act="rw-add"'+(n ? '' : ' disabled')+'>Adicionar '+n+' '+plural(n,'selecionada','selecionadas')+'</button><button type="button" class="btn" data-act="rw-clear">Descartar</button></div></div>';
+}
+function viewPremios(){
+  const t = totals(st), lv = levelOf(t.lifetime), today = TODAY();
+  const rws = st.rewards.slice().sort((a,b) => a.cost-b.cost);
+  const ach = achievements(st);
+  const rewards = rws.map(w => {
+    const can = t.balance >= w.cost, pct = Math.min(100,Math.round(t.balance/w.cost*100));
+    return '<div class="reward"><div><div class="item-name">'+esc(w.name)+'</div><div class="cost"><span class="coin"></span>'+fmt(w.cost)+' pts</div></div>'
+      + '<div class="bar gold" role="img" aria-label="'+pct+'% do valor"><i style="width:'+pct+'%"></i></div>'
+      + '<div class="row"><button type="button" class="btn sm'+(can ? ' primary' : '')+'" data-act="redeem" data-id="'+w.id+'"'+(can ? '' : ' disabled')+'>'+(can ? 'Resgatar' : 'Faltam '+fmt(w.cost-t.balance))+'</button>'+armBtn('rw-del',w.id,'Remover','Confirmar')+'</div></div>';
+  }).join('');
+  const hist = st.redeemed.slice(0,8).map(x => '<div class="hist"><span>'+esc(x.name)+' <span class="hint">· '+ddmm(x.date)+'</span></span><span class="mono">−'+fmt(x.cost)+'</span></div>').join('');
+  return '<section class="panel"><div class="kicker">Seu saldo</div><div class="balance"><span class="coin"></span><span>'+fmt(t.balance)+'</span></div>'
+    + '<div><div class="row" style="justify-content:space-between"><b>'+esc(lv.cur.n)+'</b><span class="hint">'+(lv.next ? 'faltam '+fmt(lv.need)+' pts para '+esc(lv.next.n) : 'nível máximo')+'</span></div><div class="bar" style="margin-top:8px" role="img" aria-label="'+lv.pct+'% do próximo nível"><i style="width:'+lv.pct+'%"></i></div></div>'
+    + '<div class="totals"><span>Ganhos <b>'+fmt(t.earned)+'</b></span><span>Perdidos <b>−'+fmt(t.lost)+'</b></span><span>Gastos <b>−'+fmt(t.spent)+'</b></span></div></section>'
+    + '<section><div class="panel-head" style="margin-bottom:12px"><h2>Recompensas</h2><p class="sub">Troque pontos por algo que você realmente quer. A IA define o preço de acordo com o seu ritmo.</p></div>'+rwTools()+rwSuggHTML()+'<div class="grid2">'+(rewards ||'<p class="hint">Nenhuma recompensa. Adicione uma abaixo.</p>')+'</div></section>'
+    + '<section class="panel"><div class="panel-head"><h2>Nova recompensa</h2></div><form id="reward-form" class="stack" novalidate>'
+    + '<div class="field"><label for="rw-name">O que é</label><input id="rw-name" type="text" maxlength="60" value="'+esc(ui.reward.name)+'" placeholder="Ex.: Pedir aquela pizza" autocomplete="off"></div>'
+    + '<div class="field"><label for="rw-cost">Custo em pontos'+(ui.sampleState === 'off' ? '' : ' (opcional)')+'</label><input id="rw-cost" type="number" min="5" step="5" inputmode="numeric" value="'+esc(ui.reward.cost)+'"'+(ui.sampleState === 'off' ? '' : ' placeholder="Deixe vazio para a IA decidir"')+'></div>'
+    + (ui.sampleState === 'off' ? '' : '<p class="hint">Sem custo, a IA define o preço de acordo com o seu ritmo de pontos.</p>')
+    + '<div class="row"><button class="btn primary" type="submit"'+(ui.rw.busy ? ' disabled' : '')+'>'+(ui.rw.busy ? 'Definindo o preço…' : 'Adicionar recompensa')+'</button></div></form></section>'
+    + (hist ? '<section class="panel"><div class="panel-head"><h2>Resgatados</h2></div><div>'+hist+'</div></section>' : '')
+    + '<section class="panel"><div class="panel-head"><h2>Conquistas</h2></div><ul class="ach">'+ach.map(a => '<li class="'+(a.ok ? 'on' : '')+'"><span class="ic">'+checkSVG+'</span><span><b>'+a.n+'</b>'+a.d+'</span></li>').join('')+'</ul></section>'
+    + '<section class="panel"><div class="panel-head"><h2>Regras do jogo</h2></div><dl class="rules">'
+    + '<div><dt>Pontos</dt><dd>Cada rotina vale de 5 a 15 pontos, conforme a dificuldade e o tempo. A IA avalia, e você pode fixar o valor. Só o dia de hoje pode ser marcado.</dd></div>'
+    + '<div><dt>Dia completo</dt><dd>Concluir tudo que estava agendado no dia rende +'+DAY_BONUS+' de bônus e aumenta sua sequência.</dd></div>'
+    + '<div><dt>Reposição</dt><dd>Rotina agendada que passou sem ser concluída vira reposição: você precisa refazê-la '+REP+' vezes, em dias diferentes, ainda no mesmo mês.</dd></div>'
+    + '<div><dt>Perda de pontos</dt><dd>No fechamento do mês, cada reposição que faltar tira os pontos da rotina. Seu saldo nunca fica abaixo de zero.</dd></div>'
+    + '<div><dt>Recompensas</dt><dd>O preço de cada recompensa é definido pela IA de acordo com o seu ritmo de pontos, e você também pode fixar o valor. Resgatar gasta pontos do saldo, mas não derruba seu nível.</dd></div></dl></section>';
+}
+
+// ---------- ações ----------
+const routineById = id => st.routines.find(r => r.id === id);
+function addRoutine(o){
+  st.routines.push({id:uid(),name:o.name.trim().slice(0,80),period:o.period,days:o.days.slice().sort((a,b) => a-b),points:o.points,time:o.time||'',start:TODAY()});
+}
+function doToggle(id){
+  const today = TODAY();
+  const before = new Set(achievements(st).filter(a => a.ok).map(a => a.id));
+  const debtBefore = leftFor(st,id,today);
+  const res = toggleDone(st,id,today);
+  if(!res.ok){ toast(res.reason === 'spent' ? 'Esses pontos já foram usados em um resgate. Não dá para desmarcar.' : 'Rotina não encontrada.'); return; }
+  st.best = Math.max(st.best,streak(st,today));
+  if(res.done){
+    const debtAfter = leftFor(st,id,today);
+    let m = '+'+res.pts+' pontos';
+    if(debtBefore > debtAfter) m += ' · reposição: '+(debtAfter > 0 ? 'faltam '+debtAfter : 'quitada');
+    if(res.bonus) m += ' · dia completo +'+res.bonus;
+    toast(m,'good'); bump();
+  }
+  achievements(st).filter(a => a.ok && !before.has(a.id)).forEach(a => toast('Conquista: '+a.n,'good'));
+  commit();
+}
+// Pontos da rotina quando a pessoa escolhe "IA decide": a IA avalia, e a estimativa local cobre a falha.
+async function decidePoints(o){
+  const fallback = guessPoints(o.name);
+  if(ui.sampleState !== 'ready' || !ui.sample) return {pts:fallback,ai:false};
+  const prompt = 'Dê pontos a uma rotina de um app de hábitos. Regras: 5 pontos para algo rápido ou fácil (até 15 minutos), 10 para esforço ou tempo médio (de 15 a 45 minutos), 15 para algo longo ou difícil (mais de 45 minutos ou muito exigente). Considere também o período do dia e a frequência.\n'
+    + 'Responda somente com um objeto JSON: {"points": 5, 10 ou 15}.\n'
+    + 'Rotina: "'+o.name.slice(0,80)+'". Período: '+PL[o.period]+'. Dias: '+daysText(o.days)+'.'+(o.time ? ' Horário: '+o.time+'.' : '');
+  try{
+    const data = await ui.sample.json(prompt,{modelTier:'quick'});
+    return {pts:nearestPts(typeof data === 'number' ? data : (data && data.points)),ai:true};
+  }catch(e){
+    if(aiError(e && e.code).off) ui.sampleState = 'off';
+    toast('Não consegui consultar a IA. Usei '+fallback+' pontos, estimados pelo nome.');
+    return {pts:fallback,ai:false};
+  }
+}
+async function saveRoutine(){
+  const f = ui.form;
+  if(f.busy) return;
+  if(!f.name.trim()){ toast('Dê um nome à rotina.'); return; }
+  if(!f.days.length){ toast('Escolha pelo menos um dia da semana.'); return; }
+  const o = {id:f.id,name:f.name.trim().slice(0,80),period:f.period,days:f.days.slice().sort((a,b) => a-b),points:f.points,time:f.time||''};
+  let note = '';
+  if(!o.points){
+    f.busy = true; render();
+    const d = await decidePoints(o);
+    f.busy = false;
+    o.points = d.pts;
+    note = ' com '+d.pts+' pontos'+(d.ai ? ', definidos pela IA' : '');
+  }
+  if(o.id){
+    const r = routineById(o.id);
+    if(r){
+      const changed = r.days.slice().sort().join() !== o.days.join();
+      r.name = o.name; r.period = o.period; r.days = o.days; r.points = o.points; r.time = o.time;
+      if(changed) r.start = TODAY();
+    }
+    toast('Rotina atualizada'+note+'.');
+  } else {
+    addRoutine(o);
+    toast('Rotina adicionada'+note+'. Ela aparece em Hoje nos dias agendados.');
+  }
+  if(ui.form === f) ui.form = newForm();
+  commit();
+}
+
+// Preço das recompensas: a IA decide pelo ritmo de pontos da pessoa.
+function priceBase(){
+  const p = paceInfo(st,TODAY());
+  const ritmo = p.week > 0
+    ? 'A pessoa pode ganhar até cerca de '+p.perDay+' pontos por dia ('+p.week+' por semana, '+p.month+' por mês) e vem fazendo em média '+p.real+' por dia nos últimos 14 dias.'
+    : 'A pessoa ainda não tem rotinas; considere cerca de 40 pontos por dia.';
+  return 'Cada rotina concluída rende de 5 a 15 pontos e um dia completo rende +'+DAY_BONUS+'. '+ritmo+'\n'
+    + 'Critérios de preço: uma recompensa pequena (cerca de uma hora de lazer ou um mimo barato) custa de meio dia a um dia de pontos; uma média (sobremesa especial, saída, refeição fora) custa de 2 a 5 dias; uma grande (presente, passeio, compra) custa de 2 a 4 semanas. Considere o valor em dinheiro e o tempo que a recompensa toma do dia. Use múltiplos de 5.\n';
+}
+const pricePrompt = names => 'Você define o preço, em pontos, de recompensas em um app de rotinas. '+priceBase()
+  + 'Responda somente com um array JSON de objetos {"name": o nome exatamente como recebido, "cost": número}, na mesma ordem.\nRecompensas:\n'+names.map(n => '- '+n).join('\n');
+const suggestPrompt = () => 'Você sugere recompensas para um app de rotinas, com o preço de cada uma em pontos. '+priceBase()
+  + 'Sugira 5 recompensas variadas e realistas para o dia a dia no Brasil, de pequenas a grandes'+(st.rewards.length ? ', sem repetir estas: '+st.rewards.map(w => w.name).join('; ') : '')+'. '
+  + 'Responda somente com um array JSON de objetos {"name": texto curto de até 40 caracteres, "cost": número}.';
+function rwError(e){
+  const code = e && e.code;
+  if(code === 'cancelled') return null;
+  const r = aiError(code);
+  if(r.off) ui.sampleState = 'off';
+  return r.msg;
+}
+async function addReward(){
+  if(ui.rw.busy) return;
+  const name = ui.reward.name.trim();
+  if(!name){ toast('Dê um nome à recompensa.'); return; }
+  const typed = String(ui.reward.cost).trim();
+  let cost;
+  if(typed !== ''){
+    cost = Math.round(Number(typed));
+    if(!(cost >= 5)){ toast('O custo mínimo é 5 pontos.'); return; }
+  } else {
+    if(ui.sampleState !== 'ready' || !ui.sample){ toast('Informe o custo em pontos.'); return; }
+    ui.rw.busy = true; render();
+    try{
+      const c = sanitizeCosts(await ui.sample.json(pricePrompt([name]),{modelTier:'quick'}),[name]);
+      if(!c) throw {code:'invalid_json'};
+      cost = c[0];
+    }catch(e){
+      ui.rw.busy = false;
+      const m = rwError(e); if(m) toast(m);
+      render(); return;
+    }
+    ui.rw.busy = false;
+  }
+  st.rewards.push({id:uid(),name:name.slice(0,60),cost});
+  ui.reward = {name:'',cost:''};
+  toast('Recompensa adicionada por '+fmt(cost)+' pts'+(typed === '' ? ', preço definido pela IA' : '')+'.');
+  commit();
+}
+async function runRewardAI(kind){
+  if(!ui.sample || ui.rw.status === 'loading') return;
+  if(kind === 'reprice' && !st.rewards.length) return;
+  ui.rw.status = 'loading'; ui.rw.msg = ''; ui.rw.ctl = new AbortController(); render();
+  const opts = {modelTier:'quick',signal:ui.rw.ctl.signal};
+  try{
+    if(kind === 'suggest'){
+      const items = sanitizeRewards(await ui.sample.json(suggestPrompt(),opts));
+      if(!items.length) throw {code:'invalid_json'};
+      ui.rw.sugg = items;
+    } else {
+      const snap = st.rewards.slice(), names = snap.map(w => w.name);
+      const c = sanitizeCosts(await ui.sample.json(pricePrompt(names),opts),names);
+      if(!c) throw {code:'invalid_json'};
+      snap.forEach((w,i) => { w.cost = c[i]; });
+      save(); toast('Preços ajustados pela IA ao seu ritmo.');
+    }
+  }catch(e){
+    const m = rwError(e); if(m) ui.rw.msg = m;
+  }
+  ui.rw.status = 'idle'; ui.rw.ctl = null; render();
+}
+function aiError(code){
+  if(['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'].includes(code)) return {off:true,msg:'O assistente de IA não está liberado nesta visualização. Use os modelos prontos ou crie a rotina manualmente.'};
+  if(code === 'rate_limited') return {msg:'Muitas consultas seguidas. Tente de novo daqui a pouco.'};
+  if(code === 'session_expired') return {msg:'Entre de novo na sua conta Claude para usar o assistente.'};
+  if(['invalid_json','empty_completion','refused'].includes(code)) return {msg:'Não consegui montar uma lista com esse pedido. Tente descrever de outro jeito.'};
+  return {msg:'O assistente não respondeu. Tente de novo.'};
+}
+async function runAI(){
+  const text = ui.ai.text.trim();
+  if(!ui.sample || ui.ai.status === 'loading') return;
+  if(text.length < 6){ ui.ai.msg = 'Conte um pouco mais sobre o que você quer organizar.'; render(); return; }
+  const prompt = 'Você é um coach de rotinas. A pessoa descreveu o que quer organizar. Monte de 3 a 6 rotinas pequenas, realistas e fáceis de começar, em português do Brasil.\n'
+    + 'Responda somente com um array JSON. Cada item tem: "name" (texto curto, até 40 caracteres), "period" ("manha", "tarde" ou "noite"), "days" (lista de números de 0 para domingo até 6 para sábado), "points" (5, 10 ou 15: 5 para algo rápido ou fácil, 10 para esforço ou tempo médio, 15 para algo longo ou difícil) e "tip" (uma frase curta de dica).\n'
+    + 'Exemplo: [{"name":"Caminhar 30 minutos","period":"manha","days":[1,3,5],"points":10,"tip":"Deixe o tênis perto da porta."}]\n'
+    + 'Rotinas que a pessoa já tem (não repita): '+(st.routines.map(r => r.name).join('; ') || 'nenhuma')+'\n'
+    + 'Pedido da pessoa: '+text.slice(0,1500);
+  ui.ai.status = 'loading'; ui.ai.items = []; ui.ai.msg = ''; ui.ai.ctl = new AbortController();
+  render();
+  try{
+    const data = await ui.sample.json(prompt,{modelTier:'quick',signal:ui.ai.ctl.signal});
+    const items = sanitizeSuggestions(data);
+    if(!items.length) throw {code:'invalid_json'};
+    ui.ai.items = items; ui.ai.status = 'done';
+  }catch(e){
+    ui.ai.status = 'idle';
+    const code = e && e.code;
+    if(code !== 'cancelled'){
+      const r = aiError(code);
+      ui.ai.msg = r.msg;
+      if(r.off) ui.sampleState = 'off';
+    }
+  }
+  ui.ai.ctl = null;
+  render();
+}
+async function runTips(){
+  if(!ui.sample || ui.tips.status === 'loading') return;
+  const today = TODAY(), ym = monthOf(today), days = monthDays(ym).filter(d => d <= today);
+  const debts = openDebts(st,today);
+  const lines = st.routines.map(r => {
+    let done = 0, miss = 0;
+    days.forEach(d => { if(isDone(st,r.id,d)) done++; else if(d < today && isScheduled(r,d)) miss++; });
+    const left = debts.filter(x => x.r.id === r.id).reduce((a,x) => a + x.left,0);
+    return '- '+r.name+' ('+PL[r.period]+', '+daysText(r.days)+', '+r.points+' pts): '+done+' feitas, '+miss+' falhas, reposição aberta: '+(left ? 'faltam '+left : 'nenhuma');
+  }).join('\n');
+  const prompt = 'Você é um coach de hábitos. Hoje é dia '+Number(today.slice(8))+' e o mês tem mais '+(daysLeftIn(today)-1)+' dias depois de hoje. '
+    + 'Regra do app: cada dia agendado sem concluir vira uma reposição, que exige refazer a rotina '+REP+' vezes até o fim do mês, senão a pessoa perde os pontos da rotina por cada vez que faltar.\n'
+    + 'Dados do mês:\n'+lines+'\n'
+    + 'Dê exatamente 3 dicas curtas (até 25 palavras cada), práticas e específicas para estes dados, em português do Brasil. Uma por linha, começando com "- ". Sem introdução e sem conclusão.';
+  ui.tips.status = 'loading'; ui.tips.msg = ''; ui.tips.ctl = new AbortController();
+  render();
+  try{
+    const r = await ui.sample(prompt,{modelTier:'quick',signal:ui.tips.ctl.signal});
+    const ls = r.text.split('\n').map(s => s.replace(/^\s*(?:[-*•]|\d+[.)])\s*/,'').trim()).filter(Boolean).slice(0,5);
+    if(!ls.length) throw {code:'empty_completion'};
+    ui.tips.lines = ls; ui.tips.status = 'done';
+  }catch(e){
+    ui.tips.status = 'idle';
+    const code = e && e.code;
+    if(code !== 'cancelled'){
+      const r = aiError(code);
+      ui.tips.msg = r.msg;
+      if(r.off) ui.sampleState = 'off';
+    }
+  }
+  ui.tips.ctl = null;
+  render();
+}
+async function copyBackup(){
+  ui.backup = JSON.stringify(st);
+  try{ await navigator.clipboard.writeText(ui.backup); toast('Backup copiado. Guarde em um lugar seguro.'); }
+  catch(e){ toast('Não consegui copiar sozinho. Selecione o texto abaixo e copie.'); }
+  render();
+}
+function restoreBackup(){
+  try{
+    const s = JSON.parse(ui.restore);
+    if(!s || s.v !== 1 || !Array.isArray(s.routines)) throw new Error('formato');
+    st = normalize(s);
+    settle(st,TODAY());
+    st.best = Math.max(st.best,streak(st,TODAY()));
+    ui.restore = ''; ui.backup = '';
+    toast('Backup restaurado.');
+    commit();
+  }catch(e){ toast('Esse texto não parece um backup do Marcha.'); }
+}
+function wipe(){
+  const rewards = st.rewards;
+  st = emptyState(); st.rewards = rewards;
+  ui.tips = {status:'idle',lines:[],msg:'',ctl:null};
+  ui.ai.items = []; ui.ai.msg = '';
+  ui.tab = 'hoje';
+  toast('Tudo apagado. Comece criando sua primeira rotina.');
+  commit();
+}
+
+document.addEventListener('click',e => {
+  const b = e.target.closest('[data-act]');
+  if(!b || b.disabled) return;
+  const act = b.dataset.act, id = b.dataset.id, v = b.dataset.v;
+  if(['del','rw-del','wipe','rw-reprice'].includes(act)){
+    const tok = act+':'+id;
+    if(ui.armed !== tok){
+      ui.armed = tok; clearTimeout(ui.armT);
+      ui.armT = setTimeout(() => { ui.armed = null; render(); },4000);
+      render(); return;
+    }
+    ui.armed = null; clearTimeout(ui.armT);
+  }
+  switch(act){
+    case 'tab': ui.tab = v; render(); window.scrollTo(0,0); break;
+    case 'toggle': doToggle(id); break;
+    case 'go-new':
+      ui.tab = 'rotinas'; render(); window.scrollTo(0,0);
+      { const t = document.getElementById('ai-text'); if(t) t.focus({preventScroll:true}); }
+      break;
+    case 'keep': st.example = false; commit(); break;
+    case 'wipe': wipe(); break;
+    case 'tpl-add': {
+      const t = TEMPLATES[Number(b.dataset.i)];
+      if(t){ addRoutine(t); toast('Adicionada: '+t.name); commit(); }
+      break;
+    }
+    case 'f-period': ui.form.period = v; render(); break;
+    case 'f-day': {
+      const n = Number(v), i = ui.form.days.indexOf(n);
+      if(i >= 0) ui.form.days.splice(i,1); else ui.form.days.push(n);
+      render(); break;
+    }
+    case 'f-preset': ui.form.days = (v === 'all' ? ALL : WEEK).slice(); render(); break;
+    case 'f-points': ui.form.points = Number(v); render(); break;
+    case 'f-cancel': ui.form = newForm(); render(); break;
+    case 'edit': {
+      const r = routineById(id);
+      if(r){
+        ui.form = {id:r.id,name:r.name,period:r.period,days:r.days.slice(),points:r.points,time:r.time||''};
+        render();
+        const p = document.getElementById('form-panel'); if(p) p.scrollIntoView({block:'start'});
+      }
+      break;
+    }
+    case 'del': st.routines = st.routines.filter(r => r.id !== id); if(ui.form.id === id) ui.form = newForm(); toast('Rotina apagada.'); commit(); break;
+    case 'ai-stop': if(ui.ai.ctl) ui.ai.ctl.abort(); break;
+    case 'ai-clear': ui.ai.items = []; ui.ai.msg = ''; ui.ai.status = 'idle'; render(); break;
+    case 'ai-add': {
+      const picked = ui.ai.items.filter(i => i.pick);
+      picked.forEach(addRoutine);
+      toast(picked.length+' '+plural(picked.length,'rotina adicionada','rotinas adicionadas')+'.');
+      ui.ai.items = []; ui.ai.text = ''; ui.ai.status = 'idle';
+      commit(); break;
+    }
+    case 'tips-run': runTips(); break;
+    case 'tips-stop': if(ui.tips.ctl) ui.tips.ctl.abort(); break;
+    case 'redeem':
+      if(redeem(st,id,TODAY())){ const w = st.rewards.find(x => x.id === id); toast('Resgatado: '+w.name,'good'); achievements(st); commit(); }
+      else toast('Pontos insuficientes.');
+      break;
+    case 'rw-del': st.rewards = st.rewards.filter(w => w.id !== id); commit(); break;
+    case 'rw-suggest': runRewardAI('suggest'); break;
+    case 'rw-reprice': runRewardAI('reprice'); break;
+    case 'rw-stop': if(ui.rw.ctl) ui.rw.ctl.abort(); break;
+    case 'rw-clear': ui.rw.sugg = []; render(); break;
+    case 'rw-add': {
+      const picked = ui.rw.sugg.filter(i => i.pick);
+      picked.forEach(i => st.rewards.push({id:uid(),name:i.name,cost:i.cost}));
+      toast(picked.length+' '+plural(picked.length,'recompensa adicionada','recompensas adicionadas')+'.');
+      ui.rw.sugg = []; commit(); break;
+    }
+    case 'backup-copy': copyBackup(); break;
+    case 'backup-restore': restoreBackup(); break;
+  }
+});
+document.addEventListener('change',e => {
+  const t = e.target;
+  if(t.dataset && t.dataset.act === 'ai-pick'){
+    const it = ui.ai.items[Number(t.dataset.i)];
+    if(it){ it.pick = t.checked; render(); }
+  } else if(t.dataset && t.dataset.act === 'rw-pick'){
+    const it = ui.rw.sugg[Number(t.dataset.i)];
+    if(it){ it.pick = t.checked; render(); }
+  }
+});
+document.addEventListener('input',e => {
+  const t = e.target;
+  if(t.id === 'ai-text') ui.ai.text = t.value;
+  else if(t.id === 'f-name') ui.form.name = t.value;
+  else if(t.id === 'f-time') ui.form.time = t.value;
+  else if(t.id === 'rw-name') ui.reward.name = t.value;
+  else if(t.id === 'rw-cost') ui.reward.cost = t.value;
+  else if(t.id === 'restore-text') ui.restore = t.value;
+});
+document.addEventListener('focusin',e => { if(e.target.id === 'backup-text') e.target.select(); });
+document.addEventListener('submit',e => {
+  e.preventDefault();
+  const id = e.target.id;
+  if(id === 'routine-form') saveRoutine();
+  else if(id === 'ai-form') runAI();
+  else if(id === 'reward-form') addReward();
+});
+
+// ---------- início ----------
+function afterRollover(){
+  const added = settle(st,TODAY());
+  const lost = added.reduce((a,p) => a + p.amount,0);
+  if(added.length){
+    if(lost > 0) toast('Mês fechado: −'+fmt(lost)+' pts por reposições que ficaram abertas.');
+    else toast('Mês fechado. Havia reposições abertas, mas você não tinha pontos para perder.');
+  }
+  st.best = Math.max(st.best,streak(st,TODAY()));
+  save(); render();
+}
+let curDay = TODAY();
+const checkDay = () => { const t = TODAY(); if(t !== curDay){ curDay = t; afterRollover(); } };
+setInterval(checkDay,60000);
+document.addEventListener('visibilitychange',() => { if(!document.hidden) checkDay(); });
+
+(async function(){
+  try{
+    const s = (window.claude && typeof window.claude.use === 'function') ? await window.claude.use('sample') : null;
+    ui.sample = s || null; ui.sampleState = s ? 'ready' : 'off';
+  }catch(e){ ui.sampleState = 'off'; }
+  render();
+})();
+
+afterRollover();
+})();
+</script>
+</body>
+</html>
